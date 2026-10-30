@@ -25,10 +25,11 @@ swift test                        # 测试
 swift run AppleToDoCLI --version  # 运行（M2 起更名为 appletodo）
 ```
 
-> 本机若报 `no such module 'XCTest'`：说明激活的是纯 CLT，需 `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`（已写入 ~/.zshrc）。
+> 本机若报 `no such module 'XCTest'`：先 `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`（已写入 ~/.zshrc；原因见 [ADR-0004](docs/adr/0004-toolchain-and-process.md)）。
 
 ## 文档
 
-PRD 与 ADR 决策记录将在 M0 内提交至 `docs/`（进行中）。
+- [PRD — 产品需求与路线图](docs/PRD.md)
+- [ADR — 架构决策记录](docs/adr/)
 
 **状态**：M0 项目奠基进行中。任务跟踪：Linear Project「AppleToDo」（Nankai 团队）。
