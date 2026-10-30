@@ -1,5 +1,5 @@
-import XCTest
 @testable import AppleToDoCore
+import XCTest
 
 final class AppleToDoCoreTests: XCTestCase {
     func testVersionFollowsSemver() {

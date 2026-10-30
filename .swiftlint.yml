@@ -1,0 +1,8 @@
+# SwiftLint 基线：默认规则集，仅限定扫描范围并放宽与项目写作习惯冲突的项。
+# 随代码增长再逐步收紧（AGENTS.md 核心原则：简洁起步）。
+included:
+  - Sources
+  - Tests
+line_length:
+  warning: 140
+  error: 200
