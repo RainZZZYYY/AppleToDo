@@ -18,8 +18,7 @@ public struct ScheduleService: Sendable {
     public func addEvent(title: String, start: Date, end: Date, notes: String? = nil) async throws -> CalendarEvent {
         guard start < end else { throw ScheduleError.invalidRange }
         let event = CalendarEvent(title: title, start: start, end: end, notes: Self.tagged(notes))
-        try await store.save(event: event)
-        return event
+        return try await store.save(event: event)
     }
 
     /// 改期：移动到新起点，时长与备注保持不变。
@@ -31,8 +30,7 @@ public struct ScheduleService: Sendable {
         let duration = event.end.timeIntervalSince(event.start)
         let moved = CalendarEvent(id: event.id, title: event.title, start: newStart,
                                   end: newStart.addingTimeInterval(duration), notes: event.notes)
-        try await store.save(event: moved)
-        return moved
+        return try await store.save(event: moved)
     }
 
     /// 查询范围内事件（按开始时间升序）。
@@ -52,8 +50,7 @@ public struct ScheduleService: Sendable {
     @discardableResult
     public func addReminder(title: String, due: Date? = nil, notes: String? = nil) async throws -> Reminder {
         let reminder = Reminder(title: title, due: due, notes: Self.tagged(notes))
-        try await store.save(reminder: reminder)
-        return reminder
+        return try await store.save(reminder: reminder)
     }
 
     /// 完成提醒。
@@ -63,8 +60,7 @@ public struct ScheduleService: Sendable {
             throw ScheduleError.notFound(id: id)
         }
         reminder.isCompleted = true
-        try await store.save(reminder: reminder)
-        return reminder
+        return try await store.save(reminder: reminder)
     }
 
     /// 查询提醒；`includingCompleted` 为 false 时只返回未完成项。

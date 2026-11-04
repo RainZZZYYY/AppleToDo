@@ -18,7 +18,7 @@
 
 ## 决策
 
-`AppleToDoCore` 通过 EventKit 完成所有读写；**禁止**任何模块绕过它直接操作日历数据。写入目标限定为 iCloud 账户的日历/清单（具体目标见 ADR-0002）。最低平台 macOS 13。
+`AppleToDoCore` 通过 EventKit 完成所有读写；**禁止**任何模块绕过它直接操作日历数据。写入目标限定为 iCloud 账户的日历/清单（具体目标见 ADR-0002）。最低平台 macOS 14（2026-11-04 修订：原为 13；EventKit 权限 API `requestFullAccessToEvents` 需 14+）。
 
 ## 后果
 

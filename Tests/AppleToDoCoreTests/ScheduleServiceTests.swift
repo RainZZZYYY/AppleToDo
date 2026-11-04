@@ -135,6 +135,22 @@ final class InMemoryStoreTests: XCTestCase {
         let listed = try await store.reminders(includingCompleted: true)
         XCTAssertEqual(listed.map(\.title), ["早", "晚", "无期限"])
     }
+
+    func testDeleteReminderThenAgainThrows() async throws {
+        let store = InMemoryStore()
+        let saved = try await store.save(reminder: Reminder(title: "待删"))
+        try await store.delete(reminderID: saved.id)
+        let gone = try await store.reminder(id: saved.id)
+        XCTAssertNil(gone)
+        do {
+            try await store.delete(reminderID: saved.id)
+            XCTFail("应当抛出 notFound")
+        } catch let error as ScheduleError {
+            XCTAssertEqual(error, .notFound(id: saved.id))
+        } catch {
+            XCTFail("意外错误类型: \(error)")
+        }
+    }
 }
 
 /// ADR-0005 工具形状：领域类型可 JSON 往返。

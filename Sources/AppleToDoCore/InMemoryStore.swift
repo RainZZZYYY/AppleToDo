@@ -17,8 +17,10 @@ public actor InMemoryStore: EventStoring {
         events[id]
     }
 
-    public func save(event: CalendarEvent) {
+    @discardableResult
+    public func save(event: CalendarEvent) -> CalendarEvent {
         events[event.id] = event
+        return event
     }
 
     public func delete(eventID: String) throws {
@@ -37,7 +39,15 @@ public actor InMemoryStore: EventStoring {
         reminders[id]
     }
 
-    public func save(reminder: Reminder) {
+    @discardableResult
+    public func save(reminder: Reminder) -> Reminder {
         reminders[reminder.id] = reminder
+        return reminder
+    }
+
+    public func delete(reminderID: String) throws {
+        guard reminders.removeValue(forKey: reminderID) != nil else {
+            throw ScheduleError.notFound(id: reminderID)
+        }
     }
 }

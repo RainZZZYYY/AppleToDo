@@ -7,14 +7,18 @@ public protocol EventStoring: Sendable {
     func events(in range: DateRange) async throws -> [CalendarEvent]
     /// 按 id 取事件；不存在返回 nil。
     func event(id: String) async throws -> CalendarEvent?
-    /// 保存事件：id 已存在则更新，否则创建。
-    func save(event: CalendarEvent) async throws
+    /// 保存事件：id 已存在则更新，否则创建；返回落库后的规范实体（生产适配器以 EventKit 标识符为准）。
+    @discardableResult
+    func save(event: CalendarEvent) async throws -> CalendarEvent
     /// 删除事件。
     func delete(eventID: String) async throws
-    /// 查询提醒事项。
+    /// 查询提醒事项（未指定顺序约定时按 due 升序、无 due 靠后）。
     func reminders(includingCompleted: Bool) async throws -> [Reminder]
     /// 按 id 取提醒；不存在返回 nil。
     func reminder(id: String) async throws -> Reminder?
-    /// 保存提醒：id 已存在则更新，否则创建。
-    func save(reminder: Reminder) async throws
+    /// 保存提醒：id 已存在则更新，否则创建；返回落库后的规范实体。
+    @discardableResult
+    func save(reminder: Reminder) async throws -> Reminder
+    /// 删除提醒。
+    func delete(reminderID: String) async throws
 }
