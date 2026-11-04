@@ -1,13 +1,19 @@
 # AppleToDo PRD — 产品需求与路线图
 
-版本 1.0（2026-10-31）· 状态：M0 进行中 · 维护：agent，重大变更需 owner 确认
+版本 1.1（2026-11-04）· 状态：M1 进行中 · 维护：agent，重大变更需 owner 确认
 
 ## 1. 愿景
 
 个人日程规划中枢：从多个信息源（Linear 任务、自然语言指令）收集待办，经 AI 规划，写入苹果系统日历/提醒事项，经 iCloud 全端同步。
 
 ```
-信息源（Linear / 自然语言） → 大脑（agent → 内置 LLM） → AppleToDoCore → EventKit → iCloud → iPhone
+大脑（可替换的外部客户：agent / 任意 MCP 客户端 / 未来 App 内置 LLM）
+   ↓ 只依赖能力契约（工具形状的操作，ADR-0005）
+AppleToDo 程序本体
+   ├─ Core 领域 API（真正资产：领域模型 + 规划逻辑）
+   ├─ 写入适配器：EventKitStore → 系统日历/提醒事项 → iCloud → iPhone
+   ├─ 信息源适配器：LinearSource / …（薄壳，可插拔）
+   └─ 接口适配器：CLI / MCP server / App UI（薄壳，可插拔）
 ```
 
 三种产品形态共享同一核心模块（换壳不换芯）：
@@ -34,8 +40,10 @@
 |---|---|---|
 | `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库） | M1 |
 | `AppleToDoCLI` | 命令行壳（M2 起引入 swift-argument-parser，届时打破零依赖） | M2 |
-| `AppleToDoLLM` | LLM 接入：`LLMProviding` 协议 + 智谱 GLM-5.3 实现（ADR-0004） | M6 |
-| `AppleToDoLinear` | Linear 信息源适配器（GraphQL，先只读） | M7 |
+| `AppleToDoLLM` | 内置大脑（契约的客户端之一）：`LLMProviding` 协议 + 智谱 GLM-5.3 实现（ADR-0004/0005） | M6 |
+| `AppleToDoLinear` | Linear 信息源适配器（先只读；若官方 MCP 编排方案成立则可能取消，ADR-0005） | M7 |
+
+接口壳（CLI / MCP server / App UI）不设独立模块，随里程碑以薄壳形式挂接 Core。
 
 ## 5. 里程碑路线图
 
@@ -48,7 +56,7 @@
 | M4 加固与可观测 | 结构化日志、错误码、幂等、本地集成测试 | 集成测试可重复执行 |
 | M5 菜单栏 App | SwiftUI，复用 Core | 模块复用验证 |
 | M6 LLM 接入 | GLM-5.3 接入，自然语言→结构化管线，key 走 Keychain | 端到端自然语言建日程 |
-| M7 Linear 集成 | 到期任务→待安排清单→time-block；可选 MCP server / App Intents | 周规划场景跑通 |
+| M7 Linear 集成 | 到期任务→待安排清单→time-block；优先评估 Linear 官方 MCP 编排（ADR-0005）；可选自有 MCP server / App Intents | 周规划场景跑通 |
 
 ## 6. Linear 的双重角色
 
@@ -64,3 +72,5 @@
 - ADR-0002 数据规范为暂行版，M1 实施时与 owner 盘点现有日历/清单后复核
 - 远端仓库接入时间未定（CI 届时激活，NAN-118）
 - Linear 写回（更新任务状态）是否需要，M7 前再议
+- TaskSource 插件协议延迟到第二个信息源出现时再抽象（ADR-0005）
+- M7 在「官方 MCP 编排」与「自研 GraphQL 适配器」间的取舍，届时以集成复杂度决定（ADR-0005）

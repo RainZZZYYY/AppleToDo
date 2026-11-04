@@ -5,7 +5,11 @@
 ## 架构
 
 ```
-信息源（Linear / 自然语言） → 大脑（agent → 内置 LLM） → AppleToDoCore → EventKit → iCloud → iPhone
+大脑（可替换的外部客户：agent / MCP 客户端 / 未来内置 LLM）
+   ↓ 能力契约（工具形状的操作，ADR-0005）
+AppleToDo 本体：Core 领域 API + 薄壳适配器
+   写入：EventKitStore → 系统日历/提醒事项 → iCloud → iPhone
+   信息源/接口：Linear / CLI / MCP server / App（可插拔）
 ```
 
 三种形态共享同一核心模块：agent CLI（阶段一）→ 独立 CLI / 菜单栏 App（阶段二）→ 内置 LLM API 的 App（阶段三）。
@@ -32,4 +36,4 @@ swift run AppleToDoCLI --version  # 运行（M2 起更名为 appletodo）
 - [PRD — 产品需求与路线图](docs/PRD.md)
 - [ADR — 架构决策记录](docs/adr/)
 
-**状态**：M0 项目奠基进行中。任务跟踪：Linear Project「AppleToDo」（Nankai 团队）。
+**状态**：M1 核心域层进行中。任务跟踪：Linear Project「AppleToDo」（Nankai 团队）。
