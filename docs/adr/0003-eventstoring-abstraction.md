@@ -12,7 +12,7 @@
 1. `AppleToDoCore` 依赖 `EventStoring` 协议（M1 依实际需求定义接口，**不预先设计**方法集）。
 2. 生产侧：`EventKitStore` 适配器包装 `EKEventStore`。
 3. 测试侧：内存 mock 实现供单测使用（CI 可跑）。
-4. 集成测试：环境变量 `APPLETODO_INTEGRATION_TESTS=1` 门控，仅在本地执行，且只读写本地「On My Mac」测试日历，测试后自清理；不进 CI。
+4. 集成测试：环境变量 `APPLETODO_INTEGRATION_TESTS=1` 门控，仅在本地执行，测试后自清理；不进 CI。原方案「只写本地 On My Mac 测试日历」经实测不可行（**2026-11-04 修订**：本机 EventKit 无 local 源，且 EKSource 由系统管理、无法编程创建），改为写 iCloud 账户专属 `AppleToDoTests` 日历/清单——与生产落点（ADR-0002 的 AppleToDo 日历）同构、命名隔离，条目 teardown 自清理，测试日历常驻可隐藏。
 
 ## 后果
 

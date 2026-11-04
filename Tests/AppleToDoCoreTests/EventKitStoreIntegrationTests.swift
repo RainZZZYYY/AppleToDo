@@ -4,21 +4,21 @@ import XCTest
 /// 真实 EventKit 集成测试（ADR-0003）：默认跳过，仅本地手动运行。
 ///
 /// 运行方式：`APPLETODO_INTEGRATION_TESTS=1 swift test --filter EventKitStoreIntegrationTests`
-/// 首次运行会弹出日历/提醒事项权限框。只写本地源（On My Mac）的 `AppleToDoTests` 日历/清单，
-/// 条目通过 teardown 自清理；测试日历/清单本身保留复用。
+/// 首次运行会弹出日历/提醒事项权限框。写入 iCloud 账户专属的 `AppleToDoTests` 日历/清单
+/// （本机无 On My Mac 本地源且 EventKit 无法编程创建源，ADR-0003 修订），条目通过 teardown
+/// 自清理；测试日历/清单本身保留复用（可在系统日历 app 中隐藏）。
 final class EventKitStoreIntegrationTests: XCTestCase {
-    private func localTestConfig() -> EventKitStoreConfig {
+    private func iCloudTestConfig() -> EventKitStoreConfig {
         var config = EventKitStoreConfig()
         config.eventCalendarName = "AppleToDoTests"
         config.reminderListName = "AppleToDoTests"
-        config.requireICloud = false
         return config
     }
 
     func testEventRoundTripThroughEventKit() async throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["APPLETODO_INTEGRATION_TESTS"] == "1",
                           "需 APPLETODO_INTEGRATION_TESTS=1（ADR-0003：仅本地运行）")
-        let store = EventKitStore(config: localTestConfig())
+        let store = EventKitStore(config: iCloudTestConfig())
         try await store.requestAccess()
         let service = ScheduleService(store: store)
 
@@ -43,7 +43,7 @@ final class EventKitStoreIntegrationTests: XCTestCase {
     func testReminderRoundTripThroughEventKit() async throws {
         try XCTSkipUnless(ProcessInfo.processInfo.environment["APPLETODO_INTEGRATION_TESTS"] == "1",
                           "需 APPLETODO_INTEGRATION_TESTS=1（ADR-0003：仅本地运行）")
-        let store = EventKitStore(config: localTestConfig())
+        let store = EventKitStore(config: iCloudTestConfig())
         try await store.requestAccess()
         let service = ScheduleService(store: store)
 

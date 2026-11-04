@@ -7,8 +7,6 @@ public struct EventKitStoreConfig: Sendable {
     public var eventCalendarName = "AppleToDo"
     /// 提醒默认写入的清单名。
     public var reminderListName = "AppleToDo"
-    /// true：仅接受 iCloud CalDAV 源（生产默认）；false：接受第一个可写源（本地集成测试用）。
-    public var requireICloud = true
 
     public init() {}
 }
@@ -118,18 +116,25 @@ public actor EventKitStore: EventStoring {
 
     // MARK: - 目标日历/清单解析（ADR-0002：缺失则建，无源可写则报错）
 
-    private func writableSource() -> EKSource? {
-        if config.requireICloud {
-            return store.sources.first { $0.sourceType == .calDAV && $0.title.lowercased().contains("icloud") }
+    /// 按实体类型解析 iCloud 源。注意：事件与提醒的 iCloud 是**两个不同的 EKSource**
+    /// （实测本机 id 不同），必须按目标类型的日历归属选源，否则提醒会落到事件源上。
+    private func writableSource(for type: EKEntityType) -> EKSource? {
+        let candidates = store.sources.filter {
+            $0.sourceType == .calDAV && $0.title.lowercased().contains("icloud")
         }
-        return store.sources.first { $0.sourceType == .local }
+        let withWritableCalendars = candidates.first { source in
+            store.calendars(for: type).contains {
+                $0.source.sourceIdentifier == source.sourceIdentifier && $0.allowsContentModifications
+            }
+        }
+        return withWritableCalendars ?? candidates.first
     }
 
     private func ensureCalendar(for type: EKEntityType) throws -> EKCalendar {
         if let cached = calendarCache[type] {
             return cached
         }
-        guard let source = writableSource() else {
+        guard let source = writableSource(for: type) else {
             throw ScheduleError.noWritableTarget(kind: kindName(of: type))
         }
         let name = type == .event ? config.eventCalendarName : config.reminderListName
