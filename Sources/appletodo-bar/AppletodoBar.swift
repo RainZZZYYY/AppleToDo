@@ -26,6 +26,7 @@ final class ScheduleStore {
     var durationMinutes = 60
     var status: Status = .idle
     var previewText: String?
+    var todayEvents: [CalendarEvent] = []
 
     enum Status {
         case idle
@@ -41,9 +42,18 @@ final class ScheduleStore {
         do {
             try await store.requestAccess()
             service = ScheduleService(store: store)
+            await loadToday()
         } catch {
             status = .failure("权限未获得（\(error)）")
         }
+    }
+
+    func loadToday() async {
+        guard let service else { return }
+        let calendar = Calendar.current
+        let start = calendar.startOfDay(for: Date())
+        let end = calendar.date(byAdding: .day, value: 1, to: start)!
+        todayEvents = await (try? service.listEvents(in: DateRange(start: start, end: end))) ?? []
     }
 
     func preview() {
@@ -70,6 +80,7 @@ final class ScheduleStore {
             status = .success("已创建：\(event.title) id=\(event.id.suffix(8))")
             title = ""
             previewText = nil
+            await loadToday()
         } catch {
             status = .failure("失败：\(error)")
         }
@@ -142,15 +153,44 @@ struct QuickEntryView: View {
             }
 
             Divider()
+
+            // 今日日程
+            if !store.todayEvents.isEmpty {
+                Text("今日日程")
+                    .font(.caption)
+                    .foregroundStyle(.secondary)
+                ForEach(store.todayEvents, id: \.id) { event in
+                    HStack {
+                        Text(Self.timeRange(event))
+                            .font(.caption.monospacedDigit())
+                            .foregroundStyle(.secondary)
+                        Text(event.title)
+                            .font(.caption)
+                            .lineLimit(1)
+                    }
+                }
+            } else {
+                Text("今日无日程")
+                    .font(.caption)
+                    .foregroundStyle(.tertiary)
+            }
+
+            Divider()
             Button("退出") {
                 NSApplication.shared.terminate(nil)
             }
             .keyboardShortcut("q")
         }
         .padding()
-        .frame(minWidth: 280, minHeight: 180)
+        .frame(minWidth: 280, minHeight: 200)
         .task {
             await store.requestAccess()
         }
+    }
+
+    private static func timeRange(_ event: CalendarEvent) -> String {
+        let formatter = DateFormatter()
+        formatter.dateFormat = "HH:mm"
+        return "\(formatter.string(from: event.start))-\(formatter.string(from: event.end))"
     }
 }
