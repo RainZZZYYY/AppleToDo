@@ -53,4 +53,6 @@ swift run appletodo delete-event <id>
 - [PRD — 产品需求与路线图](docs/PRD.md)
 - [ADR — 架构决策记录](docs/adr/)
 
+许可证：[MIT](LICENSE)
+
 **状态**：M2 完成，v0.1.0 已发布。任务跟踪：Linear Project「AppleToDo」（Nankai 团队）。
