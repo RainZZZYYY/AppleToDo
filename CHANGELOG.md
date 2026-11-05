@@ -7,7 +7,7 @@
 
 ### 新增
 
-- 菜单栏 App 骨架 `appletodo-bar`（SwiftUI MenuBarExtra，macOS 14+）：最小体仅显示标识与退出，快速录入在后续版本实现
+- 菜单栏 App `appletodo-bar`（SwiftUI MenuBarExtra，macOS 14+）：快速录入功能——标题 + DatePicker + 时长选择 → 预览 → 确认写入 iCloud「AppleToDo」日历（自然语言解析在 M6 LLM 接入后实现，当前为结构化输入）；权限在菜单面板首次打开时请求
 - EventKitStore 引入 os.Logger 结构化日志（subsystem `com.appletodo`，category `store`），审计留痕写操作全路径（权限/目标解析/保存/删除/创建），标题以 `.private` 保护；成功路径用 `.notice`（保证落盘可见），读方法本身不加日志（读命令仍经共享的权限/目标解析路径留痕）。Console.app 按 subsystem 过滤查看
 - 全部 8 个写命令支持 `--dry-run`：新增类命令纯内存模拟（无需任何权限）；修改/删除类命令先从真实库读取目标快照再对内存执行——业务逻辑零重复，`notFound` 语义保真。JSON 输出以 `"dryRun": true` 标记
 - `ScheduleService` 增加按 id 取条目的 getter（`event(id:)` / `reminder(id:)`），供 agent 查重与 dry-run 种子读取
