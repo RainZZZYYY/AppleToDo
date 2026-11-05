@@ -3,5 +3,5 @@
 /// 包级常量入口。
 public enum AppleToDoCore {
     /// 语义化版本；CLI `--version` 输出。
-    public static let version = "0.1.0-dev"
+    public static let version = "0.1.0"
 }

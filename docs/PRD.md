@@ -1,6 +1,6 @@
 # AppleToDo PRD — 产品需求与路线图
 
-版本 1.1（2026-11-04）· 状态：M1 进行中 · 维护：agent，重大变更需 owner 确认
+版本 1.2（2026-11-05）· 状态：M2 完成，v0.1.0 已发布 · 维护：agent，重大变更需 owner 确认
 
 ## 1. 愿景
 
@@ -38,8 +38,8 @@ AppleToDo 程序本体
 
 | 模块 | 职责 | 引入 |
 |---|---|---|
-| `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库） | M1 |
-| `AppleToDoCLI` | 命令行壳（M2 起引入 swift-argument-parser，届时打破零依赖） | M2 |
+| `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库，零依赖） | M1 |
+| `appletodo` | CLI 壳（仅 swift-argument-parser 一个依赖，ADR-0006） | M2 |
 | `AppleToDoLLM` | 内置大脑（契约的客户端之一）：`LLMProviding` 协议 + 智谱 GLM-5.3 实现（ADR-0004/0005） | M6 |
 | `AppleToDoLinear` | Linear 信息源适配器（先只读；若官方 MCP 编排方案成立则可能取消，ADR-0005） | M7 |
 
@@ -74,3 +74,4 @@ AppleToDo 程序本体
 - Linear 写回（更新任务状态）是否需要，M7 前再议
 - TaskSource 插件协议延迟到第二个信息源出现时再抽象（ADR-0005）
 - M7 在「官方 MCP 编排」与「自研 GraphQL 适配器」间的取舍，届时以集成复杂度决定（ADR-0005）
+- 备忘录适配器延后至系统成熟与 owner 工作流成形（NAN-154，技术边界已勘明：Shortcuts 优先）

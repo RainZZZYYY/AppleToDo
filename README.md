@@ -33,9 +33,24 @@ swift run appletodo --help   # CLI 用法
 
 > 本机若报 `no such module 'XCTest'`：先 `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`（已写入 ~/.zshrc；原因见 [ADR-0004](docs/adr/0004-toolchain-and-process.md)）。
 
+## CLI 用法
+
+```bash
+swift run appletodo list --date 2026-11-06          # 某天日程 + 未完成提醒
+swift run appletodo today                            # 今天
+swift run appletodo add-event "牙医" --at "2026-11-07 15:00" --duration 60 --notes "带病历"
+swift run appletodo add-reminder "买书" --due "2026-11-08"
+swift run appletodo move <id> --at "2026-11-07 16:00"   # 事件改期（保时长）
+swift run appletodo edit-reminder <id> --due "2026-11-09 10:00"
+swift run appletodo complete <id>
+swift run appletodo delete-event <id>
+```
+
+所有命令支持 `--json`（供 agent/脚本消费；错误同样输出 JSON 到 stderr，退出码 1）。
+
 ## 文档
 
 - [PRD — 产品需求与路线图](docs/PRD.md)
 - [ADR — 架构决策记录](docs/adr/)
 
-**状态**：M1 核心域层进行中。任务跟踪：Linear Project「AppleToDo」（Nankai 团队）。
+**状态**：M2 完成，v0.1.0 已发布。任务跟踪：Linear Project「AppleToDo」（Nankai 团队）。
