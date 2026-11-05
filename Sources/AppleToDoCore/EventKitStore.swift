@@ -23,6 +23,9 @@ public actor EventKitStore: EventStoring {
 
     /// 请求日历与提醒事项的完整权限（macOS 14+）；拒绝或失败抛 `accessDenied`。
     public func requestAccess() async throws {
+        // EKEventStore 非 Sendable 且仅在本 actor 内使用；传入系统非隔离 async 方法时
+        // 用 nonisolated(unsafe) 显式豁免发送检查（CI 工具链比本机更严格，会拦下隐式发送）。
+        nonisolated(unsafe) let store = store
         let granted: Bool
         do {
             let events = try await store.requestFullAccessToEvents()
