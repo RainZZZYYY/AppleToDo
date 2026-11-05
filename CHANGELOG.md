@@ -3,6 +3,12 @@
 本项目的显著变更记录于此。格式遵循 [Keep a Changelog](https://keepachangelog.com/zh-CN/1.1.0/)，
 版本号遵循 [SemVer](https://semver.org/lang/zh-CN/)。
 
+## [未发布]
+
+### 修复
+
+- `today` 命令运行即崩（手动构造 `List()` 违反 ArgumentParser 属性包装器约束）；查询逻辑抽为 `CLI.runList` 共享实现，`list`/`today` 均委托之。v0.1.0 的审查与冒烟未覆盖 `today` 实际执行，已吸取教训
+
 ## [0.1.0] - 2026-11-05
 
 首个正式版本：M0（工程奠基）+ M1（核心域层）+ M2（CLI v0.1）。

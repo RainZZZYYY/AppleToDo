@@ -109,28 +109,8 @@ struct List: AsyncParsableCommand {
     @Flag(help: "输出 JSON（供 agent/脚本消费）")
     var json = false
 
-    struct Output: Codable {
-        let date: Date
-        let events: [CalendarEvent]
-        let reminders: [Reminder]
-    }
-
     mutating func run() async throws {
-        let day = try date.map(CLI.parseDate) ?? Calendar.current.startOfDay(for: Date())
-        let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: day)!
-        do {
-            let service = try await CLI.makeService()
-            let events = try await service.listEvents(in: DateRange(start: day, end: nextDay))
-            let reminders = try await service.listReminders()
-            if json {
-                let data = try CLI.jsonEncoder().encode(Output(date: day, events: events, reminders: reminders))
-                print(CLI.text(data))
-            } else {
-                CLI.printDay(day, events: events, reminders: reminders)
-            }
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
+        try await CLI.runList(dateString: date, json: json)
     }
 }
 
@@ -141,9 +121,34 @@ struct Today: AsyncParsableCommand {
     var json = false
 
     mutating func run() async throws {
-        var list = List()
-        list.json = json
-        try await list.run()
+        try await CLI.runList(dateString: nil, json: json)
+    }
+}
+
+extension CLI {
+    struct DayOutput: Codable {
+        let date: Date
+        let events: [CalendarEvent]
+        let reminders: [Reminder]
+    }
+
+    /// list/today 的共享实现（Today 不能直接构造 List——属性包装器的值仅来自命令行解析）。
+    static func runList(dateString: String?, json: Bool) async throws {
+        let day = try dateString.map(CLI.parseDate) ?? Calendar.current.startOfDay(for: Date())
+        let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: day)!
+        do {
+            let service = try await CLI.makeService()
+            let events = try await service.listEvents(in: DateRange(start: day, end: nextDay))
+            let reminders = try await service.listReminders()
+            if json {
+                let data = try CLI.jsonEncoder().encode(DayOutput(date: day, events: events, reminders: reminders))
+                print(CLI.text(data))
+            } else {
+                CLI.printDay(day, events: events, reminders: reminders)
+            }
+        } catch let error as ScheduleError {
+            throw CLI.exitFailure(error, json: json)
+        }
     }
 }
 
