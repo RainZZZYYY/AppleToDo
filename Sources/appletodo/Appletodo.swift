@@ -41,6 +41,30 @@ enum CLI {
         return ScheduleService(store: store)
     }
 
+    /// dry-run 服务：写操作落到内存库，不触达任何真实数据。新增类命令无需种子（也无需任何权限）；
+    /// 修改/删除类命令传入目标 id——先从真实库读取并注入内存（保留 notFound 语义），业务逻辑原样执行。
+    static func dryRunService(seedEventID: String? = nil, seedReminderID: String? = nil) async throws -> ScheduleService {
+        let memory = InMemoryStore()
+        if seedEventID != nil || seedReminderID != nil {
+            let realStore = EventKitStore()
+            try await realStore.requestAccess()
+            let real = ScheduleService(store: realStore)
+            if let eventID = seedEventID {
+                guard let current = try await real.event(id: eventID) else {
+                    throw ScheduleError.notFound(id: eventID)
+                }
+                _ = try await memory.save(event: current)
+            }
+            if let reminderID = seedReminderID {
+                guard let current = try await real.reminder(id: reminderID) else {
+                    throw ScheduleError.notFound(id: reminderID)
+                }
+                _ = try await memory.save(reminder: current)
+            }
+        }
+        return ScheduleService(store: memory)
+    }
+
     static func jsonEncoder() -> JSONEncoder {
         let encoder = JSONEncoder()
         encoder.dateEncodingStrategy = .iso8601
@@ -95,298 +119,5 @@ enum CLI {
 
     struct ErrorOutput: Codable {
         let error: ScheduleError
-    }
-}
-
-// MARK: - 查询
-
-struct List: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "查看某天的日程与未完成提醒")
-
-    @Option(help: "日期（yyyy-MM-dd），默认今天")
-    var date: String?
-
-    @Flag(help: "输出 JSON（供 agent/脚本消费）")
-    var json = false
-
-    mutating func run() async throws {
-        try await CLI.runList(dateString: date, json: json)
-    }
-}
-
-struct Today: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "今天的日程与未完成提醒（等价 list）")
-
-    @Flag(help: "输出 JSON（供 agent/脚本消费）")
-    var json = false
-
-    mutating func run() async throws {
-        try await CLI.runList(dateString: nil, json: json)
-    }
-}
-
-extension CLI {
-    struct DayOutput: Codable {
-        let date: Date
-        let events: [CalendarEvent]
-        let reminders: [Reminder]
-    }
-
-    /// list/today 的共享实现（Today 不能直接构造 List——属性包装器的值仅来自命令行解析）。
-    static func runList(dateString: String?, json: Bool) async throws {
-        let day = try dateString.map(CLI.parseDate) ?? Calendar.current.startOfDay(for: Date())
-        let nextDay = Calendar.current.date(byAdding: .day, value: 1, to: day)!
-        do {
-            let service = try await CLI.makeService()
-            let events = try await service.listEvents(in: DateRange(start: day, end: nextDay))
-            let reminders = try await service.listReminders()
-            if json {
-                let data = try CLI.jsonEncoder().encode(DayOutput(date: day, events: events, reminders: reminders))
-                print(CLI.text(data))
-            } else {
-                CLI.printDay(day, events: events, reminders: reminders)
-            }
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-// MARK: - 新增
-
-struct AddEvent: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "新建日历事件")
-
-    @Argument(help: "标题")
-    var title: String
-
-    @Option(name: .customLong("at"), help: "开始时间（yyyy-MM-dd HH:mm 或 yyyy-MM-dd，纯日期按 00:00）")
-    var startTime: String
-
-    @Option(help: "时长（分钟），默认 60")
-    var duration: Int = 60
-
-    @Option(help: "备注")
-    var notes: String?
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        let start = try CLI.parseDate(startTime)
-        do {
-            let service = try await CLI.makeService()
-            let event = try await service.addEvent(title: title, start: start,
-                                                   end: start.addingTimeInterval(Double(duration) * 60), notes: notes)
-            try CLI.emit(event, human: "已创建事件", json: json)
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-struct AddReminder: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "新建提醒事项")
-
-    @Argument(help: "标题")
-    var title: String
-
-    @Option(help: "截止时间（yyyy-MM-dd HH:mm 或 yyyy-MM-dd），可省略")
-    var due: String?
-
-    @Option(help: "备注")
-    var notes: String?
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        let dueDate = try due.map(CLI.parseDate)
-        do {
-            let service = try await CLI.makeService()
-            let reminder = try await service.addReminder(title: title, due: dueDate, notes: notes)
-            try CLI.emit(reminder, human: "已创建提醒", json: json)
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-// MARK: - 变更
-
-struct Move: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "事件改期（保持时长）")
-
-    @Argument(help: "事件 id")
-    var id: String
-
-    @Option(name: .customLong("at"), help: "新的开始时间（yyyy-MM-dd HH:mm 或 yyyy-MM-dd，纯日期按 00:00）")
-    var newStart: String
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        let target = try CLI.parseDate(newStart)
-        do {
-            let service = try await CLI.makeService()
-            let event = try await service.moveEvent(id: id, to: target)
-            try CLI.emit(event, human: "已改期", json: json)
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-struct Complete: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "完成提醒")
-
-    @Argument(help: "提醒 id")
-    var id: String
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        do {
-            let service = try await CLI.makeService()
-            let reminder = try await service.completeReminder(id: id)
-            try CLI.emit(reminder, human: "已完成", json: json)
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-struct EditEvent: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "编辑事件字段（未传的保持不变）")
-
-    @Argument(help: "事件 id")
-    var id: String
-
-    @Option(help: "新标题")
-    var title: String?
-
-    @Option(help: "新备注（传空串 \"\" 表示清空）")
-    var notes: String?
-
-    @Option(help: "新时长（分钟，需为正）")
-    var duration: Int?
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        let patch = EventPatch(title: title, notes: notes, durationMinutes: duration)
-        do {
-            let service = try await CLI.makeService()
-            let event = try await service.editEvent(id: id, with: patch)
-            try CLI.emit(event, human: "已编辑事件", json: json)
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-struct EditReminder: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "编辑提醒字段（未传的保持不变）")
-
-    @Argument(help: "提醒 id")
-    var id: String
-
-    @Option(help: "新标题")
-    var title: String?
-
-    @Option(help: "新备注（传空串 \"\" 表示清空）")
-    var notes: String?
-
-    @Option(help: "新截止时间（yyyy-MM-dd HH:mm 或 yyyy-MM-dd）")
-    var due: String?
-
-    @Flag(help: "清除截止时间（与 --due 互斥）")
-    var noDue = false
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        if noDue, due != nil {
-            throw ValidationError("--no-due 与 --due 不能同时使用")
-        }
-        let dueValue: Date?? = noDue ? .some(nil) : try due.map { try .some(CLI.parseDate($0)) }
-        let patch = ReminderPatch(title: title, notes: notes, due: dueValue)
-        do {
-            let service = try await CLI.makeService()
-            let reminder = try await service.editReminder(id: id, with: patch)
-            try CLI.emit(reminder, human: "已编辑提醒", json: json)
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-struct DeleteEvent: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "删除事件")
-
-    @Argument(help: "事件 id")
-    var id: String
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        do {
-            let service = try await CLI.makeService()
-            try await service.deleteEvent(id: id)
-            if json {
-                print(#"{"deleted": "\#(id)"}"#)
-            } else {
-                print("已删除事件 \(id)")
-            }
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-struct DeleteReminder: AsyncParsableCommand {
-    static let configuration = CommandConfiguration(abstract: "删除提醒")
-
-    @Argument(help: "提醒 id")
-    var id: String
-
-    @Flag(help: "输出 JSON")
-    var json = false
-
-    mutating func run() async throws {
-        do {
-            let service = try await CLI.makeService()
-            try await service.deleteReminder(id: id)
-            if json {
-                print(#"{"deleted": "\#(id)"}"#)
-            } else {
-                print("已删除提醒 \(id)")
-            }
-        } catch let error as ScheduleError {
-            throw CLI.exitFailure(error, json: json)
-        }
-    }
-}
-
-// MARK: - 输出
-
-extension CLI {
-    /// 变更类命令的统一输出：人类可读一行（含 id）或完整 JSON 实体。
-    static func emit(_ value: some Codable, human: String, json: Bool) throws {
-        if json {
-            let data = try jsonEncoder().encode(value)
-            print(text(data))
-        } else if let event = value as? CalendarEvent {
-            print("\(human)：\(event.title)  id=\(event.id)")
-        } else if let reminder = value as? Reminder {
-            print("\(human)：\(reminder.title)  id=\(reminder.id)")
-        } else {
-            print(human)
-        }
     }
 }

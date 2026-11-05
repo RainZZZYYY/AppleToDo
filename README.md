@@ -46,7 +46,7 @@ swift run appletodo complete <id>
 swift run appletodo delete-event <id>
 ```
 
-所有命令支持 `--json`（供 agent/脚本消费；错误同样输出 JSON 到 stderr，退出码 1）。
+所有命令支持 `--json`（供 agent/脚本消费；错误同样输出 JSON 到 stderr，退出码 1）；全部写命令支持 `--dry-run`（演练：只展示将发生什么，不实际写入；其中新增类命令无需任何系统权限）。
 
 ## 文档
 

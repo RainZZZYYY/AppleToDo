@@ -39,6 +39,11 @@ public struct ScheduleService: Sendable {
         return try await store.events(in: range)
     }
 
+    /// 按 id 取事件；不存在返回 nil（agent 查重/确认用）。
+    public func event(id: String) async throws -> CalendarEvent? {
+        try await store.event(id: id)
+    }
+
     /// 删除事件。
     public func deleteEvent(id: String) async throws {
         try await store.delete(eventID: id)
@@ -88,6 +93,11 @@ public struct ScheduleService: Sendable {
     /// 查询提醒；`includingCompleted` 为 false 时只返回未完成项。
     public func listReminders(includingCompleted: Bool = false) async throws -> [Reminder] {
         try await store.reminders(includingCompleted: includingCompleted)
+    }
+
+    /// 按 id 取提醒；不存在返回 nil（agent 查重/确认用）。
+    public func reminder(id: String) async throws -> Reminder? {
+        try await store.reminder(id: id)
     }
 
     /// 编辑提醒：仅应用补丁中的非 nil 字段。

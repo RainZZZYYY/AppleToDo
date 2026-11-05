@@ -5,6 +5,11 @@
 
 ## [未发布]
 
+### 新增
+
+- 全部 8 个写命令支持 `--dry-run`：新增类命令纯内存模拟（无需任何权限）；修改/删除类命令先从真实库读取目标快照再对内存执行——业务逻辑零重复，`notFound` 语义保真。JSON 输出以 `"dryRun": true` 标记
+- `ScheduleService` 增加按 id 取条目的 getter（`event(id:)` / `reminder(id:)`），供 agent 查重与 dry-run 种子读取
+
 ### 修复
 
 - `today` 命令运行即崩（手动构造 `List()` 违反 ArgumentParser 属性包装器约束）；查询逻辑抽为 `CLI.runList` 共享实现，`list`/`today` 均委托之。v0.1.0 的审查与冒烟未覆盖 `today` 实际执行，已吸取教训

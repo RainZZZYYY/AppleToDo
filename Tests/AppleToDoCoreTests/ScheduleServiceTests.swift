@@ -293,4 +293,18 @@ final class ServiceEditTests: XCTestCase {
             XCTFail("意外错误类型: \(error)")
         }
     }
+
+    func testServiceGettersById() async throws {
+        let start = Date(timeIntervalSince1970: 1000)
+        let event = try await service.addEvent(title: "查我", start: start, end: start.addingTimeInterval(600))
+        let reminder = try await service.addReminder(title: "查提醒")
+        let fetchedEvent = try await service.event(id: event.id)
+        XCTAssertEqual(fetchedEvent?.id, event.id)
+        let fetchedReminder = try await service.reminder(id: reminder.id)
+        XCTAssertEqual(fetchedReminder?.id, reminder.id)
+        let missingEvent = try await service.event(id: "missing")
+        XCTAssertNil(missingEvent)
+        let missingReminder = try await service.reminder(id: "missing")
+        XCTAssertNil(missingReminder)
+    }
 }
