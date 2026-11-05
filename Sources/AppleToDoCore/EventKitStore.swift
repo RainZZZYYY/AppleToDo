@@ -59,16 +59,23 @@ public actor EventKitStore: EventStoring {
     @discardableResult
     public func save(event: CalendarEvent) throws -> CalendarEvent {
         let ekEvent = store.event(withIdentifier: event.id) ?? EKEvent(eventStore: store)
-        ekEvent.calendar = try ensureCalendar(for: .event)
         ekEvent.title = event.title
         ekEvent.startDate = event.start
         ekEvent.endDate = event.end
         ekEvent.notes = event.notes
         do {
+            ekEvent.calendar = try ensureCalendar(for: .event)
             try store.save(ekEvent, span: .thisEvent, commit: true)
         } catch {
-            log.error("事件保存失败 id=\(event.id, privacy: .public)：\(error.localizedDescription, privacy: .public)")
-            throw error
+            log.warning("事件保存首次失败 id=\(event.id, privacy: .public)：\(error.localizedDescription, privacy: .public)——清缓存重试")
+            calendarCache.removeValue(forKey: .event)
+            do {
+                ekEvent.calendar = try ensureCalendar(for: .event)
+                try store.save(ekEvent, span: .thisEvent, commit: true)
+            } catch {
+                log.error("事件保存失败（自愈后仍失败）id=\(event.id, privacy: .public)：\(error.localizedDescription, privacy: .public)")
+                throw ScheduleError.noWritableTarget(kind: "event")
+            }
         }
         log.notice("事件已保存 id=\(ekEvent.eventIdentifier ?? event.id, privacy: .public) 标题=\(event.title, privacy: .private)")
         return ekEvent.domain
@@ -117,7 +124,6 @@ public actor EventKitStore: EventStoring {
     @discardableResult
     public func save(reminder: Reminder) throws -> Reminder {
         let ekReminder = (store.calendarItem(withIdentifier: reminder.id) as? EKReminder) ?? EKReminder(eventStore: store)
-        ekReminder.calendar = try ensureCalendar(for: .reminder)
         ekReminder.title = reminder.title
         ekReminder.notes = reminder.notes
         ekReminder.isCompleted = reminder.isCompleted
@@ -127,10 +133,18 @@ public actor EventKitStore: EventStoring {
             ekReminder.dueDateComponents = nil
         }
         do {
+            ekReminder.calendar = try ensureCalendar(for: .reminder)
             try store.save(ekReminder, commit: true)
         } catch {
-            log.error("提醒保存失败 id=\(reminder.id, privacy: .public)：\(error.localizedDescription, privacy: .public)")
-            throw error
+            log.warning("提醒保存首次失败 id=\(reminder.id, privacy: .public)：\(error.localizedDescription, privacy: .public)——清缓存重试")
+            calendarCache.removeValue(forKey: .reminder)
+            do {
+                ekReminder.calendar = try ensureCalendar(for: .reminder)
+                try store.save(ekReminder, commit: true)
+            } catch {
+                log.error("提醒保存失败（自愈后仍失败）id=\(reminder.id, privacy: .public)：\(error.localizedDescription, privacy: .public)")
+                throw ScheduleError.noWritableTarget(kind: "reminder")
+            }
         }
         log.notice("提醒已保存 id=\(ekReminder.calendarItemIdentifier, privacy: .public) 标题=\(reminder.title, privacy: .private)")
         return ekReminder.domain
