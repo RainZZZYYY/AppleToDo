@@ -14,7 +14,7 @@
 
 ## Git 规范
 
-- 远端：GitHub 私有仓库（origin，SSH 专属密钥路由，与 Gitee 账号隔离）。日常直推 main——质量由提交前审查协议保证，CI 在每次 push 运行；重大或实验性变更走短分支 + PR（CI 先行验证）。
+- 远端：GitHub 公开仓库（origin，MIT 协议；SSH 专属密钥路由，与 Gitee 账号隔离）。日常直推 main——质量由提交前审查协议保证，CI 在每次 push 运行；重大或实验性变更走短分支 + PR（CI 先行验证）。
 - Conventional Commits：`type(scope): 中文摘要`（类型前缀、技术名词、`Refs` 等关键记录保留英文），正文用中文说明动机，尾注引用任务 `Refs: NAN-xxx`（owner 要求，2026-11-05 起）。
 - 提交门禁：涉及 Swift 代码时 `swift build && swift test` 必须通过。
 
