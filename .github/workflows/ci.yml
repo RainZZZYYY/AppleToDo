@@ -7,7 +7,6 @@ on:
 
 jobs:
   build-lint-test:
-    # 说明：仓库暂无远端，此流水线在接入 GitHub 后激活（NAN-118）。
     runs-on: macos-15
     steps:
       - uses: actions/checkout@v4

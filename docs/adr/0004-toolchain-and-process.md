@@ -9,6 +9,8 @@
 
 先建本地仓库，远端接入时间未定。CI workflow 已就位但休眠，接入远端后激活（NAN-118，届时评估 brew 工具版本锁定）。休眠期间审查协议在会话内执行（见 AGENTS.md）。
 
+> **修订（2026-11-05）**：远端已接入 GitHub 私有仓库，CI 激活，NAN-118 闭环；Git 策略（日常直推 main，重大变更走短分支 + PR）见 AGENTS.md。
+
 ## 2. 测试框架：XCTest 而非 swift-testing
 
 本机裸 CLT 工具链不含 `Testing` 模块（`swift test` 报 no such module）；XCTest 在完整 Xcode 与 CI runner 上均可用。若未来 swift-testing 普及，可再迁移。

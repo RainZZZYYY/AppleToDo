@@ -14,7 +14,7 @@
 
 ## Git 规范
 
-- 暂为本地仓库（无远端），直接提交 main；接入远端后改为短分支 + PR。
+- 远端：GitHub 私有仓库（origin，SSH 专属密钥路由，与 Gitee 账号隔离）。日常直推 main——质量由提交前审查协议保证，CI 在每次 push 运行；重大或实验性变更走短分支 + PR（CI 先行验证）。
 - Conventional Commits：`type(scope): summary`，正文说明动机，尾注引用任务 `Refs: NAN-xxx`。
 - 提交门禁：涉及 Swift 代码时 `swift build && swift test` 必须通过。
 
