@@ -18,16 +18,18 @@ AppleToDo 本体：Core 领域 API + 薄壳适配器
 
 | 模块 | 职责 |
 |---|---|
-| `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库） |
-| `AppleToDoCLI` | 命令行壳 |
+| `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库，零依赖） |
+| `appletodo` | CLI 壳（仅 swift-argument-parser 一个依赖） |
 
 ## 开发
 
 ```bash
-swift build                       # 构建
-swift test                        # 测试
-swift run AppleToDoCLI --version  # 运行（M2 起更名为 appletodo）
+swift build                  # 构建
+swift test                   # 测试
+swift run appletodo --help   # CLI 用法
 ```
+
+> 首次执行访问日历/提醒事项的命令（如 `list`）时，系统会弹授权框；后台环境无法弹框会被系统静默拒绝（见 ADR-0003，Terminal 下运行正常）。
 
 > 本机若报 `no such module 'XCTest'`：先 `export DEVELOPER_DIR=/Applications/Xcode.app/Contents/Developer`（已写入 ~/.zshrc；原因见 [ADR-0004](docs/adr/0004-toolchain-and-process.md)）。
 

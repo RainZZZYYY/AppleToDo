@@ -79,10 +79,9 @@ public actor EventKitStore: EventStoring {
     /// EKReminder 非 Sendable：数组仅在此 actor 内使用，跨隔离域转移用 nonisolated(unsafe) 标注。
     private func fetchReminders(matching predicate: NSPredicate) async -> [EKReminder] {
         await withCheckedContinuation { continuation in
-            nonisolated(unsafe) let safeContinuation = continuation
             store.fetchReminders(matching: predicate) { reminders in
                 nonisolated(unsafe) let result = reminders ?? []
-                safeContinuation.resume(returning: result)
+                continuation.resume(returning: result)
             }
         }
     }
