@@ -44,6 +44,28 @@ public struct ScheduleService: Sendable {
         try await store.delete(eventID: id)
     }
 
+    /// 编辑事件：仅应用补丁中的非 nil 字段；时长需为正，否则 invalidRange。
+    @discardableResult
+    public func editEvent(id: String, with patch: EventPatch) async throws -> CalendarEvent {
+        guard let event = try await store.event(id: id) else {
+            throw ScheduleError.notFound(id: id)
+        }
+        if let minutes = patch.durationMinutes, minutes <= 0 {
+            throw ScheduleError.invalidRange
+        }
+        var updated = event
+        if let title = patch.title {
+            updated.title = title
+        }
+        if let notes = patch.notes {
+            updated.notes = notes.isEmpty ? nil : Self.tagged(notes)
+        }
+        if let minutes = patch.durationMinutes {
+            updated.end = updated.start.addingTimeInterval(Double(minutes) * 60)
+        }
+        return try await store.save(event: updated)
+    }
+
     // MARK: - 提醒事项
 
     /// 新建提醒（备注自动附溯源标记）。
@@ -66,6 +88,29 @@ public struct ScheduleService: Sendable {
     /// 查询提醒；`includingCompleted` 为 false 时只返回未完成项。
     public func listReminders(includingCompleted: Bool = false) async throws -> [Reminder] {
         try await store.reminders(includingCompleted: includingCompleted)
+    }
+
+    /// 编辑提醒：仅应用补丁中的非 nil 字段。
+    @discardableResult
+    public func editReminder(id: String, with patch: ReminderPatch) async throws -> Reminder {
+        guard var reminder = try await store.reminder(id: id) else {
+            throw ScheduleError.notFound(id: id)
+        }
+        if let title = patch.title {
+            reminder.title = title
+        }
+        if let notes = patch.notes {
+            reminder.notes = notes.isEmpty ? nil : Self.tagged(notes)
+        }
+        if case let .some(due) = patch.due {
+            reminder.due = due
+        }
+        return try await store.save(reminder: reminder)
+    }
+
+    /// 删除提醒。
+    public func deleteReminder(id: String) async throws {
+        try await store.delete(reminderID: id)
     }
 
     // MARK: - 私有

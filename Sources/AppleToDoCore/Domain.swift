@@ -48,6 +48,53 @@ public struct DateRange: Equatable, Codable, Sendable {
     public static let forever = DateRange(start: .distantPast, end: .distantFuture)
 }
 
+/// 事件补丁：nil 字段不变；notes 传 "" 表示清空；时长需为正。
+public struct EventPatch: Equatable, Codable, Sendable {
+    public var title: String?
+    public var notes: String?
+    public var durationMinutes: Int?
+
+    public init(title: String? = nil, notes: String? = nil, durationMinutes: Int? = nil) {
+        self.title = title
+        self.notes = notes
+        self.durationMinutes = durationMinutes
+    }
+}
+
+/// 提醒补丁：nil 字段不变；notes 传 "" 表示清空。
+/// due 为双重可选——nil=不变、`.some(nil)`=清除、`.some(date)`=设置，与 JSON「字段缺失 vs null」一一对应。
+/// 自定义解码：合成的 decodeIfPresent 会把 `"due": null` 与字段缺失混同为外层 nil，必须显式区分。
+public struct ReminderPatch: Equatable, Sendable {
+    public var title: String?
+    public var notes: String?
+    public var due: Date??
+
+    public init(title: String? = nil, notes: String? = nil, due: Date?? = nil) {
+        self.title = title
+        self.notes = notes
+        self.due = due
+    }
+}
+
+extension ReminderPatch: Codable {
+    private enum CodingKeys: String, CodingKey {
+        case title, notes, due
+    }
+
+    public init(from decoder: Decoder) throws {
+        let container = try decoder.container(keyedBy: CodingKeys.self)
+        title = try container.decodeIfPresent(String.self, forKey: .title)
+        notes = try container.decodeIfPresent(String.self, forKey: .notes)
+        if container.contains(.due) {
+            due = try container.decodeNil(forKey: .due)
+                ? .some(nil)
+                : .some(container.decode(Date.self, forKey: .due))
+        } else {
+            due = nil
+        }
+    }
+}
+
 /// 领域错误：作为数据返回（可编码、语义稳定），ADR-0005「错误即数据」。
 public enum ScheduleError: Error, Equatable, Codable, Sendable {
     /// 指定 id 的条目不存在。
