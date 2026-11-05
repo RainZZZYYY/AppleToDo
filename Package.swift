@@ -10,6 +10,7 @@ let package = Package(
     ],
     targets: [
         .target(name: "AppleToDoCore"),
+        .target(name: "AppleToDoLLM"),
         .executableTarget(
             name: "appletodo",
             dependencies: [
