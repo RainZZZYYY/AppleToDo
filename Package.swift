@@ -17,6 +17,10 @@ let package = Package(
                 "AppleToDoCore",
             ]
         ),
+        .executableTarget(
+            name: "appletodo-bar",
+            dependencies: ["AppleToDoCore"]
+        ),
         .testTarget(
             name: "AppleToDoCoreTests",
             dependencies: ["AppleToDoCore"]

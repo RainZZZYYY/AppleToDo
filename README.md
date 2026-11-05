@@ -20,6 +20,7 @@ AppleToDo 本体：Core 领域 API + 薄壳适配器
 |---|---|
 | `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库，零依赖） |
 | `appletodo` | CLI 壳（仅 swift-argument-parser 一个依赖） |
+| `appletodo-bar` | 菜单栏 App 壳（SwiftUI，仅依赖 Core；骨架） |
 
 ## 开发
 
