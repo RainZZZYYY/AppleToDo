@@ -7,11 +7,13 @@
 
 ### 新增
 
+- EventKitStore 引入 os.Logger 结构化日志（subsystem `com.appletodo`，category `store`），审计留痕写操作全路径（权限/目标解析/保存/删除/创建），标题以 `.private` 保护；成功路径用 `.notice`（保证落盘可见），读方法本身不加日志（读命令仍经共享的权限/目标解析路径留痕）。Console.app 按 subsystem 过滤查看
 - 全部 8 个写命令支持 `--dry-run`：新增类命令纯内存模拟（无需任何权限）；修改/删除类命令先从真实库读取目标快照再对内存执行——业务逻辑零重复，`notFound` 语义保真。JSON 输出以 `"dryRun": true` 标记
 - `ScheduleService` 增加按 id 取条目的 getter（`event(id:)` / `reminder(id:)`），供 agent 查重与 dry-run 种子读取
 
 ### 修复
 
+- 事件/提醒保存失败时自动清空日历缓存并重试一次（清偿 v0.1.0 已知限制——目标日历/清单被外部删除后缓存过期导致后续写入报原始 EventKit 错误）；重试仍失败统一抛 `noWritableTarget`（此前原始错误在 `--json` 模式下非 JSON 输出）
 - `today` 命令运行即崩（手动构造 `List()` 违反 ArgumentParser 属性包装器约束）；查询逻辑抽为 `CLI.runList` 共享实现，`list`/`today` 均委托之。v0.1.0 的审查与冒烟未覆盖 `today` 实际执行，已吸取教训
 
 ## [0.1.0] - 2026-11-05

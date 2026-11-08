@@ -46,7 +46,24 @@ swift run appletodo complete <id>
 swift run appletodo delete-event <id>
 ```
 
-所有命令支持 `--json`（供 agent/脚本消费；错误同样输出 JSON 到 stderr，退出码 1）；全部写命令支持 `--dry-run`（演练：只展示将发生什么，不实际写入；其中新增类命令无需任何系统权限）。
+所有命令支持 `--json`（供 agent/脚本消费；错误同样输出 JSON 到 stderr）；全部写命令支持 `--dry-run`（演练：只展示将发生什么，不实际写入；其中新增类命令无需任何系统权限）。
+
+### 退出码与错误
+
+| 退出码 | 含义 | 触发条件 |
+|---|---|---|
+| 0 | 成功 | 正常执行完毕（含 `--dry-run` 演练） |
+| 1 | 业务失败 | `ScheduleError`（见下表），stderr 输出人类可读消息或 `{"error":...}` JSON |
+| 64 | 用法错误 | 参数格式/日期格式不合法（ArgumentParser 标准） |
+
+`ScheduleError` 四种业务错误（JSON 键名即此）：
+
+| 错误 | 含义 |
+|---|---|
+| `notFound` | 指定 id 的条目不存在 |
+| `invalidRange` | 时间范围非法（如事件时长非正） |
+| `accessDenied` | 未获日历/提醒事项权限（后台环境会静默拒绝，见上文授权说明） |
+| `noWritableTarget` | 找不到可写入的日历/清单 |
 
 ## 文档
 
