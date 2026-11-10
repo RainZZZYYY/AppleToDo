@@ -1,6 +1,6 @@
 # AppleToDo PRD — 产品需求与路线图
 
-版本 1.2（2026-11-05）· 状态：M2 完成，v0.1.0 已发布 · 维护：agent，重大变更需 owner 确认
+版本 1.3（2026-11-10）· 状态：M4+M5 完成；路线调整——LLM 延后，MCP 与 App 设计优先（ADR-0007） · 维护：agent，重大变更需 owner 确认
 
 ## 1. 愿景
 
@@ -40,7 +40,7 @@ AppleToDo 程序本体
 |---|---|---|
 | `AppleToDoCore` | 领域模型 + EventKit 封装 + 规划逻辑（纯库，零依赖） | M1 |
 | `appletodo` | CLI 壳（仅 swift-argument-parser 一个依赖，ADR-0006） | M2 |
-| `AppleToDoLLM` | 内置大脑（契约的客户端之一）：`LLMProviding` 协议 + 智谱 GLM-5.3 实现（ADR-0004/0005） | M6 |
+| `AppleToDoLLM` | 内置大脑：`LLMProviding` + GLMProvider，**延后不入 main**（ADR-0007） | M6（延后） |
 | `AppleToDoLinear` | Linear 信息源适配器（先只读；若官方 MCP 编排方案成立则可能取消，ADR-0005） | M7 |
 
 接口壳（CLI / MCP server / App UI）不设独立模块，随里程碑以薄壳形式挂接 Core。
@@ -55,8 +55,10 @@ AppleToDo 程序本体
 | M3 Agent 集成 | skill 文档 + 安全规则（查重/确认/dry-run） | 会话内实测日程管理 |
 | M4 加固与可观测 | 结构化日志、错误码、幂等、本地集成测试 | 集成测试可重复执行 |
 | M5 菜单栏 App | SwiftUI，复用 Core | 模块复用验证 |
-| M6 LLM 接入 | GLM-5.3 接入，自然语言→结构化管线，key 走 Keychain | 端到端自然语言建日程 |
-| M7 Linear 集成 | 到期任务→待安排清单→time-block；优先评估 Linear 官方 MCP 编排（ADR-0005）；可选自有 MCP server / App Intents | 周规划场景跑通 |
+| M6 LLM 接入 · **延后**（ADR-0007） | 自然语言→结构化管线；首项（LLMProviding + GLMProvider）已实现于 dev 分支，待捡起 | 端到端自然语言建日程（重启时验收） |
+| M7 Linear 集成 | 到期任务→待安排清单→time-block；优先评估 Linear 官方 MCP 编排（ADR-0005）；可选 App Intents 接入 Siri | 周规划场景跑通 |
+| **M8 MCP 服务端**（当前优先 1） | AppleToDo 作为 MCP server：把 CLI 现有全部能力（10 个子命令，写操作含 dry-run 语义）暴露为 MCP 工具，ZCode 及任意 MCP 客户端原生直连，对标 Linear 官方 MCP 体验（ADR-0007） | agent 会话内经 MCP 直操日程（CLI+skill 降级为兼容路径） |
+| **M9 App 设计与完善**（当前优先 2） | 桌面 App + 菜单栏 App 功能集与交互设计先行，评审后实现；含 .app bundle 化（NAN-170） | 设计文档过审；双击 .app 可用 |
 
 ## 6. Linear 的双重角色
 
@@ -73,6 +75,7 @@ AppleToDo 程序本体
 - Linear 写回（更新任务状态）是否需要，M7 前再议
 - TaskSource 插件协议延迟到第二个信息源出现时再抽象（ADR-0005）
 - M7 在「官方 MCP 编排」与「自研 GraphQL 适配器」间的取舍，届时以集成复杂度决定（ADR-0005）
+- M6（LLM）重启条件：MCP 与 App 功能面成熟、owner 工作流成形（ADR-0007）
 - 备忘录适配器延后至系统成熟与 owner 工作流成形（NAN-154，技术边界已勘明：Shortcuts 优先）
 
 （已解决：远端仓库于 2026-11-05 接入 GitHub，同日转为公开仓库（MIT），CI 激活，NAN-118 闭环。）
